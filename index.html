@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analisis Penggunaan Tanah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+try{document.documentElement.dataset.theme=localStorage.theme||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){document.documentElement.dataset.theme="light"}
+</script>
+<style>
+:root{--bg:#0a1214;--card:#111b1d;--bd:#223235;--tx:#e8f1f0;--mu:#8aa09e;--ac:#2dd4bf;--ac-tx:#04211d;--hov:#16242a;--scrim:rgba(0,0,0,.6)}
+:root[data-theme=light]{--bg:#f1f7f6;--card:#fff;--bd:#d3e2df;--tx:#0f1f1e;--mu:#587270;--ac:#0d9488;--ac-tx:#fff;--hov:#eaf3f1;--scrim:rgba(15,31,30,.45)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;font-family:"Plus Jakarta Sans",system-ui,Segoe UI,Arial,sans-serif;background:radial-gradient(700px 360px at 50% -10%,rgba(45,212,191,.18),transparent 70%),var(--bg);color:var(--tx);letter-spacing:-.01em}
+.top{display:flex;align-items:center;gap:10px;padding:16px clamp(16px,4vw,40px);font-weight:700}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--ac);color:var(--ac-tx);display:grid;place-items:center}
+.logo svg,.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sp{flex:1}
+button{font-family:inherit;cursor:pointer}
+.th{width:36px;height:36px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);display:grid;place-items:center}
+.th .sun{display:none}[data-theme=dark] .th .sun{display:block}[data-theme=dark] .th .moon{display:none}
+main{flex:1;max-width:980px;width:100%;margin:0 auto;padding:clamp(24px,6vw,72px) 20px}
+h1{margin:0 0 10px;font-size:clamp(28px,4.5vw,44px);line-height:1.1;letter-spacing:-.03em;max-width:16em}
+.lead{color:var(--mu);margin:0 0 36px;max-width:40em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:20px}
+.card p{margin:0;color:var(--mu);font-size:14px;flex:1}
+.cta{align-self:flex-start;background:var(--ac);color:var(--ac-tx);border:0;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700}
+.cta:hover{filter:brightness(1.08)}
+.modal{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;padding:16px;z-index:10}
+.modal[hidden]{display:none}
+.mbox{background:var(--card);border:1px solid var(--bd);border-radius:16px;width:min(520px,100%);padding:24px}
+.mbox h3{margin:0 0 4px;font-size:18px}.mbox>p{margin:0 0 16px;color:var(--mu);font-size:14px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.opt:hover,.opt:focus-visible{border-color:var(--ac);background:var(--hov);outline:none}
+.opt b{display:block;font-size:15px}.opt span{font-size:13px;color:var(--mu)}
+.close{background:none;border:0;color:var(--mu);font-size:13px;padding:6px 0}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,.18);color:#d97706;margin-left:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>Analisis Penggunaan Tanah
+  <span class="sp"></span>
+  <button class="th" id="theme" title="Ganti tema" aria-label="Ganti tema">
+    <svg class="ic moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    <svg class="ic sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+</header>
+<main>
+  <h1>Dari shapefile ke analisis, dalam satu tempat.</h1>
+  <p class="lead">Pilih alat yang ingin Anda gunakan. Selanjutnya Anda bisa mencoba langsung (trial) atau masuk/daftar agar file tersimpan di akun.</p>
+  <div class="grid">
+    <section class="card">
+      <h2>Dashboard Peta &amp; Analisis</h2>
+      <p>Lihat peta interaktif penggunaan tanah, filter wilayah, dan baca ringkasan analisis dalam beberapa tab.</p>
+      <button class="cta" data-app="dashboard">Buka Dashboard</button>
+    </section>
+    <section class="card">
+      <h2>Tabel Rekap &amp; Excel</h2>
+      <p>Ubah data atribut shapefile menjadi tabel rekap lengkap beserta grafik, lalu unduh sebagai file Excel.</p>
+      <button class="cta" data-app="tabel">Buka Tabel</button>
+    </section>
+  </div>
+</main>
+
+<div class="modal" id="mod" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="mt">
+    <h3 id="mt">Pilih cara akses</h3>
+    <p id="ms"></p>
+    <button class="opt" id="o-trial"><b>Coba Trial <span class="badge">tanpa akun</span></b><span>Langsung pakai. File yang diunggah <u>tidak disimpan</u> ke database.</span></button>
+    <button class="opt" id="o-login"><b id="o-login-t">Masuk / Daftar</b><span id="o-login-s">File yang diunggah tersimpan di akun dan bisa dibuka lagi kapan saja.</span></button>
+    <button class="close" id="close">Batal</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="frontend/supabase.js"></script>
+<script>
+const APPS = {
+  dashboard: { name: 'Dashboard Peta & Analisis', url: 'frontend/index.html', next: 'index.html' },
+  tabel:     { name: 'Tabel Rekap & Excel',       url: 'tabel-excel/index.html', next: '../tabel-excel/index.html' }
+};
+const $ = s => document.querySelector(s), mod = $('#mod');
+let app = null, session = null;
+
+$('#theme').onclick = () => {
+  const r = document.documentElement; r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.theme = r.dataset.theme } catch (e) {}
+};
+
+// Cek sesi (jika sudah login, tombol masuk langsung melanjutkan)
+(async () => { try { session = (await supa.auth.getSession()).data.session } catch (e) {} })();
+
+document.querySelectorAll('[data-app]').forEach(b => b.onclick = () => {
+  app = APPS[b.dataset.app];
+  $('#ms').textContent = app.name + ' — bagaimana Anda ingin menggunakannya?';
+  if (session) {
+    $('#o-login-t').textContent = 'Lanjutkan sebagai ' + session.user.email;
+    $('#o-login-s').textContent = 'File yang diunggah tersimpan di akun Anda.';
+  } else {
+    $('#o-login-t').textContent = 'Masuk / Daftar';
+    $('#o-login-s').textContent = 'File yang diunggah tersimpan di akun dan bisa dibuka lagi kapan saja.';
+  }
+  mod.hidden = false; $('#o-trial').focus();
+});
+$('#o-trial').onclick = () => location.href = app.url + '?mode=trial';
+$('#o-login').onclick = () => {
+  location.href = session ? app.url : 'frontend/login.html?next=' + encodeURIComponent(app.next);
+};
+const closeM = () => mod.hidden = true;
+$('#close').onclick = closeM;
+mod.addEventListener('click', e => { if (e.target === mod) closeM() });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeM() });
+</script>
+</body>
+</html>
