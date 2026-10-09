@@ -4,7 +4,7 @@
 // ====== PENGATURAN: ubah di sini bila pembagian jenis hak berbeda ======
 const HAT_ADA = ['hak milik', 'hak pakai', 'hak guna bangunan', 'hak wakaf'];   // -> kolom "Ada HAT" (IV-18)
 const HAT_BELUM = ['kosong', 'hak belum terdaftar'];                              // -> kolom "Belum Ada HAT" (IV-18)
-const HAT_GALAT = ['hak belum terdaftar'];                                        // -> Jumlah Bidang & Luas di III-9
+const HAT_GALAT = ['hak belum terdaftar', 'belum terdaftar'];                                        // -> Jumlah Bidang & Luas di III-9
 // =======================================================================
 
 (() => {

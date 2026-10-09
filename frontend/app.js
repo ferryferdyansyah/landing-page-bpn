@@ -61,12 +61,13 @@ $('#bm').onchange = e => {
 };
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
 const cv = L.canvas({ padding: .3 });
+const setOp = () => { if (cv._container) cv._container.style.opacity = op };
 const isHid = (r, c) => !vis(r) || (hid[tab] && hid[tab].has(c));
 function st(f) {
     const r = rows[f.properties.__i], c = TABS[tab].c(r);
     if (isHid(r, c)) return { stroke: false, fillOpacity: 0 };
     const u = custom[c] || {};
-    return { stroke: outline, color: u.s || '#ffffff', weight: u.w || .5, fillColor: u.h ? (u.p || (u.p = mkPat(u.h))) : u.pf && u.pf.t ? (u.p || (u.p = mkPic(u.pf))) : col(c), fillOpacity: op }
+    return { stroke: false, fillColor: u.h ? (u.p || (u.p = mkPat(u.h))) : u.pf && u.pf.t ? (u.p || (u.p = mkPic(u.pf))) : col(c), fillOpacity: op }
 }
 function mkPat(h) {
     const sp = Math.max(3, (h.sp || 3) * 1.33), t = document.createElement('canvas'); t.width = 16; t.height = Math.ceil(sp);
@@ -156,7 +157,9 @@ async function load(file) {
         if (allB) map.fitBounds(allB);
         const bs = [...new Set(rows.map(r => r.b))].sort((a, b) => a.localeCompare(b));
         $('#kab').innerHTML = '<option value="">Semua kabupaten</option>' + bs.map(k => `<option>${esc(k)}</option>`).join('');
-        $('#kab').disabled = false; $('#kec').disabled = false; kabSel = kecSel = ''; fillKec(); render();
+        $('#kab').disabled = false; $('#kec').disabled = false; kabSel = kecSel = ''; $('#kab').disabled = false; $('#kec').disabled = false; kabSel = kecSel = '';
+        await stylxReady; autoMatch();      // <-- tambahan: cocokkan simbol dengan kategori data yang baru dimuat
+        fillKec(); render();
     } catch (e) { console.error(e); alert('Gagal membaca file: ' + e.message); if (!rows.length) $('#empty').style.display = 'flex' }
     $('#load').style.display = 'none';
 }
@@ -283,7 +286,7 @@ const VIEWS = {
             box('Proporsi ketersediaan tanah (luas)', chart('c1')) +
             box('Ketersediaan tanah pada rencana pola ruang (ha)', chart('c2')) +
             box('Arahan ketersediaan tanah terbesar (ha)', chart('c3')) +
-            box('Potensi sosial ekonomi per ' + LN(kf).toLowerCase(), tbl([[LN(kf)], ['Tersedia (ha, %)', 1], ['Tidak Tersedia (ha, %)', 1], ['Belum Ada HAT (ha, %)', 1], ['Ada HAT (ha, %)', 1]], [...g].sort((a, b) => a[0].localeCompare(b[0])).map(([k, a]) => `<tr><td>${esc(k)}</td>${cell(a.v, a.t)}${cell(a.t - a.v, a.t)}${cell(a.b, a.t)}${cell(a.h, a.t)}</tr>`).join(''))) +
+            // box('Potensi sosial ekonomi per ' + LN(kf).toLowerCase(), tbl([[LN(kf)], ['Tersedia (ha, %)', 1], ['Tidak Tersedia (ha, %)', 1], ['Belum Ada HAT (ha, %)', 1], ['Ada HAT (ha, %)', 1]], [...g].sort((a, b) => a[0].localeCompare(b[0])).map(([k, a]) => `<tr><td>${esc(k)}</td>${cell(a.v, a.t)}${cell(a.t - a.v, a.t)}${cell(a.b, a.t)}${cell(a.h, a.t)}</tr>`).join(''))) +
             cross('Ketersediaan per ' + LN(kf).toLowerCase(), kf, r => r.v, rs)
     },
     pot() {
@@ -320,6 +323,7 @@ function render(skipLegend) {
     const rs = V(), tot = rs.reduce((a, r) => a + r.l, 0);
     $('#content').innerHTML = `<div class="cards"><div class="stat"><b>${rs.length.toLocaleString('id-ID')}</b><span>Poligon</span></div><div class="stat"><b>${fm(tot, 1)}</b><span>Total luas (ha)</span></div><div class="stat"><b>${kecSel ? 1 : new Set(rs.map(r => r.k)).size}</b><span>Kecamatan</span></div></div>` + (rs.length ? VIEWS[tab]() : '');
     groups.forEach(g => g.setStyle(st));
+    setOp();
     if (!skipLegend) legend();
 }
 
@@ -333,12 +337,11 @@ function legend() {
     const T = add(s, x => x[1]) || 1, mx = s.length ? s[0][1] || 1 : 1, q = lgQ.trim().toLowerCase();
     let list = s.map((x, i) => [x, i]).filter(([x]) => !q || String(x[0]).toLowerCase().includes(q));
     const cut = !q && !lgAll && list.length > LIM; if (cut) list = list.slice(0, LIM);
-    const opt = styles.length ? '<option value="">Style</option>' + styles.map((x, j) => `<option value="${j}">${esc(x.n)}</option>`).join('') : '';
     const hidN = [...h].filter(k => lgKeys.includes(k)).length;
     $('#lgttl').innerHTML = `<b>${TABS[tab].t}</b><span>${s.length} kategori${hidN ? ` · ${hidN} disembunyikan` : ''}</span>`;
     $('#lg').innerHTML = (list.length ? list.map(([[k, v], i]) => {
         const off = h.has(k), c = col(k);
-        return `<div class="lr${off ? ' off' : ''}" style="--c:${c};--w:${Math.max(.02, v / mx)}"><input type="color" data-c="${i}" value="${hex(c)}" title="Ubah warna"><label class="tg" title="${esc(k)} · ${fm(v, 1)} ha"><input type="checkbox" data-h="${i}" ${off ? '' : 'checked'}><span class="nm">${esc(k)}</span></label><span class="pct">${pc(v, T)}</span>${opt ? `<select data-s="${i}" title="Terapkan style">${opt}</select>` : ''}</div>`
+        return `<div class="lr${off ? ' off' : ''}" style="--c:${c};--w:${Math.max(.02, v / mx)}"><input type="color" data-c="${i}" value="${hex(c)}" title="Ubah warna"><label class="tg" title="${esc(k)} · ${fm(v, 1)} ha"><input type="checkbox" data-h="${i}" ${off ? '' : 'checked'}><span class="nm">${esc(k)}</span></label><span class="pct">${pc(v, T)}</span></div>`
     }).join('') : '<div class="mu" style="padding:8px 4px">Tidak ada kategori yang cocok.</div>')
         + (!q && s.length > LIM ? `<button id="lgmore">${lgAll ? 'Ringkas daftar' : `Tampilkan semua (${s.length})`}</button>` : '');
 }
@@ -350,15 +353,14 @@ $('#lg').addEventListener('input', e => {
 $('#lg').addEventListener('change', e => {
     const d = e.target.dataset;
     if (d.h != null) { const k = lgKeys[d.h], h = hid[tab]; e.target.checked ? h.delete(k) : h.add(k); render() }
-    else if (d.s != null && e.target.value !== '') { const k = lgKeys[d.s], x = styles[e.target.value]; app(k, x); render() }
 });
 $('#lg').addEventListener('click', e => { if (e.target.closest('#lgmore')) { lgAll = !lgAll; legend() } });
 $('#lgq').addEventListener('input', e => { lgQ = e.target.value; legend() });
 $('#lgon').onclick = () => { hid[tab] = new Set(); render() };
 $('#lgoff').onclick = () => { hid[tab] = new Set(lgKeys); render() };
-$('#op').oninput = e => { op = e.target.value / 100; $('#opv').textContent = e.target.value + '%'; groups.forEach(g => g.setStyle(st)) };
-$('#ol').onchange = e => { outline = e.target.checked; groups.forEach(g => g.setStyle(st)) };
-$('#rst').onclick = () => { for (const k in custom) delete custom[k]; hid = {}; render() };
+$('#op').oninput = e => { op = e.target.value / 100; $('#opv').textContent = e.target.value + '%'; setOp() };
+// $('#ol').onchange = e => { outline = e.target.checked; groups.forEach(g => g.setStyle(st)) };
+// $('#rst').onclick = () => { for (const k in custom) delete custom[k]; hid = {}; render() };
 $('#sht').onclick = () => $('#sym').classList.toggle('min');
 if (innerWidth < 900) $('#sym').classList.add('min');
 L.DomEvent.disableClickPropagation($('#sym')); L.DomEvent.disableScrollPropagation($('#sym'));
@@ -398,6 +400,20 @@ function parseSym(o) {
     return { f: c, s: s, w: w ? Math.max(.3, Math.min(4, w * 1.33)) : undefined, h: f ? undefined : h, pf: f || h ? undefined : pf }
 }
 const norm = t => String(t).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function autoMatch() {
+    if (!styles.length) return 0;
+    const cats = new Set(['Berubah', 'Tidak Berubah']); rows.forEach(r => [r.g, r.q, r.ks, r.o, r.v].forEach(x => cats.add(x)));
+    const idx = [...new Map(styles.map(x => [norm(x.n), x]))]; let m = 0;
+    cats.forEach(k => {
+        const nk = norm(k); if (!nk) return;
+        const x = (idx.find(i => i[0] === nk) || idx.find(i => nk.length > 4 && i[0].length > 4 && (i[0].includes(nk) || nk.includes(i[0]))) || [])[1];
+        if (x) { app(k, x); m++ }
+    });
+    $('#ss').textContent = `${styles.length} simbol dimuat, ${m} kategori cocok otomatis berdasarkan nama.`;
+    return m;
+}
+
 async function loadStylx(file) {
     $('#ss').textContent = 'Membaca .stylx...';
     try {
@@ -412,19 +428,17 @@ async function loadStylx(file) {
         db.close();
         await Promise.all(styles.filter(x => x.pf).map(x => prep(x).catch(() => { delete x.pf; bad++ })));
         if (!styles.length) { $('#ss').textContent = 'Tidak ada simbol poligon pada file ini.'; return }
-        const cats = new Set(['Berubah', 'Tidak Berubah']); rows.forEach(r => [r.g, r.q, r.ks, r.o, r.v].forEach(x => cats.add(x)));
-        const idx = [...new Map(styles.map(x => [norm(x.n), x]))]; let m = 0;
-        cats.forEach(k => {
-            const nk = norm(k); if (!nk) return;
-            const x = (idx.find(i => i[0] === nk) || idx.find(i => nk.length > 4 && i[0].length > 4 && (i[0].includes(nk) || nk.includes(i[0]))) || [])[1];
-            if (x) { app(k, x); m++ }
-        });
-        $('#ss').textContent = `${styles.length} simbol dimuat ${bad ? ` (${bad} tidak terbaca)` : ''}, ${m} kategori cocok otomatis berdasarkan nama. Sisanya bisa dipilih lewat menu Style.`;
-        rows.length ? render() : legend();
+        autoMatch();
+        if (bad) $('#ss').textContent += ` (${bad} simbol tidak terbaca)`;
+        if (rows.length) render();
     } catch (e) { console.error(e); $('#ss').textContent = 'Gagal membaca .stylx: ' + (e.message || e) }
 }
-$('#sty').onclick = () => $('#sfile').click();
-$('#sfile').onchange = e => { if (e.target.files[0]) loadStylx(e.target.files[0]); e.target.value = '' };
+
+/* Muat otomatis simbologi bawaan dari assets/simbologi.stylx */
+const stylxReady = fetch('assets/simbologi.stylx')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob() })
+    .then(loadStylx)
+    .catch(e => { console.warn(e); $('#ss').textContent = 'Simbologi bawaan gagal dimuat: ' + e.message });
 
 /* UI */
 $('#nav').innerHTML = Object.entries(TABS).map(([k, v]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${ic(v.i)}${v.t}</button>`).join('');

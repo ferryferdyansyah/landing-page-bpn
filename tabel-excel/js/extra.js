@@ -119,9 +119,11 @@ function excel7(wb, ws, d, ex) {
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 24; for (let c = 3; c <= 7; c++) ws.getColumn(c).width = 14;
   // ===== GRAFIK ASLI =====
   const q = `'${ws.name.replace(/'/g, "''")}'!`, R = c => `${q}$${c}$${r1}:$${c}$${rL}`;
-  addXChart({ sheet: ws.name, type: 'bar', title: yr('PERUBAHAN PENGGUNAAN TANAH PER KECAMATAN TAHUN 2014-2026 (HA)'), legend: 'b', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'bar', title: yr('PERUBAHAN PENGGUNAAN TANAH PER KECAMATAN TAHUN 2014-2026 (HA)'), legend: 'b', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h },
     series: [{ name: 'Berubah', cat: R('B'), catVals: d.rows.map(r => r.k), val: R('C'), vals: d.rows.map(r => r.b), color: '#ffc000' },
-             { name: 'Tidak Berubah', cat: R('B'), catVals: d.rows.map(r => r.k), val: R('E'), vals: d.rows.map(r => r.tb), color: NAVY }] });
+    { name: 'Tidak Berubah', cat: R('B'), catVals: d.rows.map(r => r.k), val: R('E'), vals: d.rows.map(r => r.tb), color: NAVY }]
+  });
 }
 
 // =====================================================================
@@ -191,9 +193,11 @@ function excel9(wb, ws, d, ex) {
   cell(ws, n, 3, FX(`SUM(C2:C${rL})`, d.T), { num: 1, b: 1 });
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 70; ws.getColumn(3).width = 16;
   const q = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'pie', title: yr('PERUBAHAN PENGGUNAAN TANAH DOMINAN TAHUN 2014-2026 (%)'), legend: 'r', from: { col: 3, row: 1 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'pie', title: yr('PERUBAHAN PENGGUNAAN TANAH DOMINAN TAHUN 2014-2026 (%)'), legend: 'r', from: { col: 3, row: 1 }, ext: { w: ex.w, h: ex.h },
     pointColors: d.top.map((_, i) => PAL[i % PAL.length]),
-    series: [{ cat: `${q}$B$2:$B$${rL}`, catVals: d.top.map(x => x.c), val: `${q}$C$2:$C$${rL}`, vals: d.top.map(x => x.t) }] });
+    series: [{ cat: `${q}$B$2:$B$${rL}`, catVals: d.top.map(x => x.c), val: `${q}$C$2:$C$${rL}`, vals: d.top.map(x => x.t) }]
+  });
 }
 
 // =====================================================================
@@ -218,9 +222,13 @@ function excel10(wb, ws, d, ex) {
   d.rows.forEach((r, i) => { H(ws, 1, 8 + i, 1, 8 + i, r.c); cell(ws, 2, 8 + i, FX(`E${2 + i}`, Math.abs(r.d) < 0.005 ? 0 : r.d), { num: 1 }); });
   ws.getColumn(7).width = 40; for (let i = 0; i < d.rows.length; i++) ws.getColumn(8 + i).width = 16;
   const q = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'bar', title: yr('PERUBAHAN PENGGUNAAN TANAH REKLASIFIKASI TAHUN 2014-2026 (HA)'), legend: 'r', from: { col: 6, row: 3 }, ext: { w: ex.w, h: ex.h },
-    series: d.rows.map((r, i) => ({ name: r.c, nameRef: `${q}${A1(1, 8 + i, 1, 1)}`, cat: `${q}$G$2`, catVals: [yr('Perubahan Penggunaan Tanah 2014-2026 (Ha)')],
-      val: `${q}${A1(2, 8 + i, 1, 1)}`, vals: [Math.abs(r.d) < 0.005 ? 0 : r.d], color: PAL2[i % PAL2.length] })) });
+  addXChart({
+    sheet: ws.name, type: 'bar', title: yr('PERUBAHAN PENGGUNAAN TANAH REKLASIFIKASI TAHUN 2014-2026 (HA)'), legend: 'r', from: { col: 6, row: 3 }, ext: { w: ex.w, h: ex.h },
+    series: d.rows.map((r, i) => ({
+      name: r.c, nameRef: `${q}${A1(1, 8 + i, 1, 1)}`, cat: `${q}$G$2`, catVals: [yr('Perubahan Penggunaan Tanah 2014-2026 (Ha)')],
+      val: `${q}${A1(2, 8 + i, 1, 1)}`, vals: [Math.abs(r.d) < 0.005 ? 0 : r.d], color: PAL2[i % PAL2.length]
+    }))
+  });
 }
 
 // =====================================================================
@@ -288,9 +296,13 @@ function excel17(wb, ws, d, ex) {
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 32; for (let c = 3; c <= 5; c++) ws.getColumn(c).width = 16; ws.getColumn(6).width = 14;
   ws.getColumn(8).width = 24; for (let i = 0; i < d.rows.length; i++) ws.getColumn(9 + i).width = 18;
   const q = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'bar', title: yr('PERUBAHAN POTENSI CADANGAN KARBON TAHUN 2014-2026 (TON)'), legend: 'r', from: { col: 7, row: 3 }, ext: { w: ex.w, h: ex.h },
-    series: d.rows.map((r, i) => ({ name: r.c, nameRef: `${q}${A1(1, 9 + i, 1, 1)}`, cat: `${q}$H$2`, catVals: ['Perubahan'],
-      val: `${q}${A1(2, 9 + i, 1, 1)}`, vals: [z(r.d)], color: PAL2[i % PAL2.length] })) });
+  addXChart({
+    sheet: ws.name, type: 'bar', title: yr('PERUBAHAN POTENSI CADANGAN KARBON TAHUN 2014-2026 (TON)'), legend: 'r', from: { col: 7, row: 3 }, ext: { w: ex.w, h: ex.h },
+    series: d.rows.map((r, i) => ({
+      name: r.c, nameRef: `${q}${A1(1, 9 + i, 1, 1)}`, cat: `${q}$H$2`, catVals: ['Perubahan'],
+      val: `${q}${A1(2, 9 + i, 1, 1)}`, vals: [z(r.d)], color: PAL2[i % PAL2.length]
+    }))
+  });
 }
 
 // =====================================================================
@@ -395,8 +407,10 @@ function excel15(wb, ws, d, ex) {
   cell(ws, n, cT, FX(`SUM(${C(cT)}${r1}:${C(cT)}${rL})`, d.T), { num: 1, b: 1 });
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 55; for (let c = 3; c <= cT; c++) ws.getColumn(c).width = 15;
   const q = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${q}$C$2:$${C(2 + nk)}$2`;
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'b', from: { col: cT + 1, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI PERTANIAN PANGAN TAHUN 2026 (HA)',
-    series: d.rows.map((r, i) => ({ name: r.label, nameRef: `${q}$B$${r1 + i}`, cat, catVals: d.kecs, val: `${q}$C$${r1 + i}:$${C(2 + nk)}$${r1 + i}`, vals: r.v, color: COL_BAR[i % COL_BAR.length] })) });
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'b', from: { col: cT + 1, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI PERTANIAN PANGAN TAHUN 2026 (HA)',
+    series: d.rows.map((r, i) => ({ name: r.label, nameRef: `${q}$B$${r1 + i}`, cat, catVals: d.kecs, val: `${q}$C$${r1 + i}:$${C(2 + nk)}$${r1 + i}`, vals: r.v, color: COL_BAR[i % COL_BAR.length] }))
+  });
 }
 
 // ---------- IV-16 : Potensi Sektor Lain ----------
@@ -462,8 +476,10 @@ function excel16(wb, ws, d, ex) {
   cell(ws, r, cT, FX(subs.map(s => `${C(cT)}${s.rs}`).join('+'), d.T), { num: 1, b: 1 });
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 26; ws.getColumn(3).width = 60; for (let c = 4; c <= cT; c++) ws.getColumn(c).width = 15;
   const q = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${q}$D$2:$${C(3 + nk)}$2`;
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'b', from: { col: cT + 1, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI SEKTOR LAIN TAHUN 2026 (HA)',
-    series: d.groups.map((g, i) => ({ name: g.name, nameRef: `${q}$B$${subs[i].r0}`, cat, catVals: d.kecs, val: `${q}$D$${subs[i].rs}:$${C(3 + nk)}$${subs[i].rs}`, vals: g.sub, color: COL_BAR[i % COL_BAR.length] })) });
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'b', from: { col: cT + 1, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI SEKTOR LAIN TAHUN 2026 (HA)',
+    series: d.groups.map((g, i) => ({ name: g.name, nameRef: `${q}$B$${subs[i].r0}`, cat, catVals: d.kecs, val: `${q}$D$${subs[i].rs}:$${C(3 + nk)}$${subs[i].rs}`, vals: g.sub, color: COL_BAR[i % COL_BAR.length] }))
+  });
 }
 
 // ---------- IV-14 : Ringkasan Potensi Sektoral ----------
@@ -518,9 +534,11 @@ function excel14(wb, ws, d, ex) {
   cell(ws, rt, 4, FX(`SUM(D2:D${rL})`, 100), { num: 1, b: 1 });
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 40; ws.getColumn(3).width = 16; ws.getColumn(4).width = 14;
   const q = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'pie', legend: 'r', from: { col: 5, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI SEKTORAL TAHUN 2026 (%)',
+  addXChart({
+    sheet: ws.name, type: 'pie', legend: 'r', from: { col: 5, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH UNTUK POTENSI SEKTORAL TAHUN 2026 (%)',
     pointColors: d.items.map((_, i) => i === nI - 1 ? SISA_COL : PIE_COL[i % PIE_COL.length]),
-    series: [{ cat: `${q}$B$2:$B$${rL}`, catVals: d.items.map(x => x.c), val: `${q}$C$2:$C$${rL}`, vals: d.items.map(x => Math.max(0, x.t)) }] });
+    series: [{ cat: `${q}$B$2:$B$${rL}`, catVals: d.items.map(x => x.c), val: `${q}$C$2:$C$${rL}`, vals: d.items.map(x => Math.max(0, x.t)) }]
+  });
 }
 
 // =====================================================================
@@ -691,9 +709,11 @@ function excelKetKec(wb, ws, d, ex) {
   for (let c = 3; c <= 7; c++) ws.getCell(n, c).font = { bold: true };
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 24; for (let c = 3; c <= 7; c++) ws.getColumn(c).width = 14;
   const q = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${q}$B$${r1}:$B$${rL}`, cats = d.rows.map(r => r.k);
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'b', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH PER KECAMATAN ' + d.wil.toUpperCase() + ' TAHUN 2026 (HA)',
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'b', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h }, title: 'KETERSEDIAAN TANAH PER KECAMATAN ' + d.wil.toUpperCase() + ' TAHUN 2026 (HA)',
     series: [{ name: 'Tersedia', cat, catVals: cats, val: `${q}$C$${r1}:$C$${rL}`, vals: d.rows.map(r => r.a), color: '#ffc000' },
-             { name: 'Tidak Tersedia', cat, catVals: cats, val: `${q}$E$${r1}:$E$${rL}`, vals: d.rows.map(r => r.b), color: NAVY }] });
+    { name: 'Tidak Tersedia', cat, catVals: cats, val: `${q}$E$${r1}:$E$${rL}`, vals: d.rows.map(r => r.b), color: NAVY }]
+  });
 }
 
 // ---------- IV-10 : per kecamatan x Penggunaan Tanah (kolom col, mis. QNAME25) ----------
@@ -831,7 +851,7 @@ function excelKes(wb, ws, d, ex) {
   // tulis 7 sel: s, %s, m, %m, x, %x, t. f = {s,m,x} rumus luas (null = nilai statis); persen & jumlah selalu rumus
   const put = (r, c, o, f, b) => {
     const T = `${C(c + 6)}${r}`, p = k => `IF(${T}=0,0,${C(k)}${r}/${T}*100)`;
-    cell(ws, r, c, f.s ? FX(f.s, o.s) : o.s, { num: 1, b });     cell(ws, r, c + 1, FX(p(c), o.ps), { num: 1, b });
+    cell(ws, r, c, f.s ? FX(f.s, o.s) : o.s, { num: 1, b }); cell(ws, r, c + 1, FX(p(c), o.ps), { num: 1, b });
     cell(ws, r, c + 2, f.m ? FX(f.m, o.m) : o.m, { num: 1, b }); cell(ws, r, c + 3, FX(p(c + 2), o.pm), { num: 1, b });
     cell(ws, r, c + 4, f.x ? FX(f.x, o.x) : o.x, { num: 1, b }); cell(ws, r, c + 5, FX(p(c + 4), o.px), { num: 1, b });
     cell(ws, r, c + 6, FX(`${C(c)}${r}+${C(c + 2)}${r}+${C(c + 4)}${r}`, o.t), { num: 1, b: 1 });
@@ -854,7 +874,7 @@ function excelKes(wb, ws, d, ex) {
     ws.mergeCells(k0, 1, r - 1, 1); ws.mergeCells(k0, 2, r - 1, 2);
   });
   cell(ws, r, 1, d.wil, { b: 1, ctr: 1 }); cell(ws, r, 2, null); cell(ws, r, 3, null); ws.mergeCells(r, 1, r, 3);
-  const tf = {}; ['s', 'm', 'x'].forEach((k, i) => tf[k] = `SUMIF($C$4:$C$${r - 1},"Jumlah",${C(n1 + i * 2)}$4:${C(n1 + i * 2)}$${r - 1})`);   // total = jumlahkan baris "Jumlah" tiap kecamatan
+  const tf = {};['s', 'm', 'x'].forEach((k, i) => tf[k] = `SUMIF($C$4:$C$${r - 1},"Jumlah",${C(n1 + i * 2)}$4:${C(n1 + i * 2)}$${r - 1})`);   // total = jumlahkan baris "Jumlah" tiap kecamatan
   put(r, n1, d.tot, tf, true);
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 20; ws.getColumn(3).width = 38; for (let c = 4; c <= 9; c++) ws.getColumn(c).width = 12; ws.getColumn(10).width = 15;
   // ---- ringkasan per kecamatan (kanan): mulai kolom 12, mengambil dari baris "Jumlah" tabel rinci ----
@@ -867,11 +887,13 @@ function excelKes(wb, ws, d, ex) {
   cell(ws, n, c0, d.wil, { b: 1, ctr: 1 }); cell(ws, n, c0 + 1, null); ws.mergeCells(n, c0, n, c0 + 1); put(n, n2, d.tot, sumF(n2, 4, n - 1), true);
   ws.getColumn(c0).width = 6; ws.getColumn(c0 + 1).width = 20; for (let c = c0 + 2; c <= c0 + 7; c++) ws.getColumn(c).width = 12; ws.getColumn(c0 + 8).width = 15;
   const q = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${q}$${C(c0 + 1)}$4:$${C(c0 + 1)}$${n - 1}`, cats = d.kecs.map(k => k.k), R = c => `${q}$${C(c)}$4:$${C(c)}$${n - 1}`;
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'b', from: { col: c0 - 1, row: n + 1 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'b', from: { col: c0 - 1, row: n + 1 }, ext: { w: ex.w, h: ex.h },
     title: 'KESESUAIAN PENGGUNAAN TANAH TERHADAP FUNGSI KAWASAN PER KECAMATAN DI ' + d.wil.toUpperCase() + ' TAHUN 2026 (HA)',
     series: [{ name: 'Sesuai', cat, catVals: cats, val: R(n2), vals: d.kecs.map(k => k.sub.s), color: NAVY },
-             { name: 'Mendukung', cat, catVals: cats, val: R(n2 + 2), vals: d.kecs.map(k => k.sub.m), color: '#ffc000' },
-             { name: 'Tidak Sesuai', cat, catVals: cats, val: R(n2 + 4), vals: d.kecs.map(k => k.sub.x), color: '#c00000' }] });
+    { name: 'Mendukung', cat, catVals: cats, val: R(n2 + 2), vals: d.kecs.map(k => k.sub.m), color: '#ffc000' },
+    { name: 'Tidak Sesuai', cat, catVals: cats, val: R(n2 + 4), vals: d.kecs.map(k => k.sub.x), color: '#c00000' }]
+  });
   ws.views = [{ state: 'frozen', ySplit: 3 }];
 }
 
@@ -1034,14 +1056,21 @@ const popSet = (k, v) => {
   try { localStorage.setItem('djpa_pop', JSON.stringify(POP)) } catch (e) { }
 };
 const fInt = v => Math.round(v).toLocaleString('en-US');
+const KPS = (() => { try { return JSON.parse(localStorage.getItem('djpa_kp_bps') || '{}') } catch (e) { return {} } })();
+const kpKey = k => wilayah() + '|' + k;
+const kpGet = (k, j) => { const e = KPS[kpKey(k)]; return e && j !== null && e.j === j && typeof e.v === 'number' && isFinite(e.v) ? e.v : null };
+const kpSet = (k, v, j) => {
+  if (v === null || isNaN(v)) delete KPS[kpKey(k)]; else KPS[kpKey(k)] = { v, j };
+  try { localStorage.setItem('djpa_kp_bps', JSON.stringify(KPS)) } catch (e) { }
+};
 let T3 = null;   // data tabel yang sedang tampil (dipakai saat mengetik)
 function popCalc(rows, totHa) {
   const vals = rows.map(r => popGet(r.k)), filled = vals.filter(v => v !== null), tj = sumArr(filled);
   return {
     vals, tj, n: filled.length,
     pp: vals.map(v => v !== null && tj ? pc(v, tj) : null),
-    kp: vals.map((v, i) => v !== null && rows[i].ha ? v / (rows[i].ha / 100) : null),
-    tkp: filled.length && totHa ? tj / (totHa / 100) : null
+    kp: vals.map((v, i) => v !== null && rows[i].ha ? (kpGet(rows[i].k, v) ?? v / (rows[i].ha / 100)) : null),
+    tkp: filled.length && totHa ? (kpGet('__kota', tj) ?? tj / (totHa / 100)) : null
   };
 }
 function buildT3() {
@@ -1097,20 +1126,26 @@ function excelT3(wb, ws, d, ex) {
     fx(r, 4, `C${r}/C$${rt}*100`, row.pw, '#,##0.00');
     const e = cell(ws, r, 5, p.vals[i]); e.numFmt = '#,##0'; e.fill = YEL;
     fx(r, 6, `IF(OR(E${r}="",E$${rt}=0),"",E${r}/E$${rt}*100)`, p.pp[i] === null ? '' : p.pp[i], '#,##0.00');
-    fx(r, 7, `IF(OR(E${r}="",C${r}=0),"",E${r}/(C${r}/100))`, p.kp[i] === null ? '' : p.kp[i], '#,##0');
+    // di dalam d.rows.forEach, gantikan fx(r, 7, ...):
+    const kpo = kpGet(row.k, p.vals[i]);
+    if (kpo !== null) { const g = cell(ws, r, 7, kpo); g.numFmt = '#,##0'; g.fill = YEL } else fx(r, 7, `IF(OR(E${r}="",C${r}=0),"",E${r}/(C${r}/100))`, p.kp[i] === null ? '' : p.kp[i], '#,##0');
   });
   cell(ws, rt, 1, d.wil, { b: 1, ctr: 1 }); cell(ws, rt, 2, null); ws.mergeCells(rt, 1, rt, 2);
   fx(rt, 3, `SUM(C${r0}:C${r1})`, d.totHa, '#,##0.00', 1);
   fx(rt, 4, `SUM(D${r0}:D${r1})`, 100, '#,##0.00', 1);
   fx(rt, 5, `IF(COUNT(E${r0}:E${r1})=0,"",SUM(E${r0}:E${r1}))`, p.n ? p.tj : '', '#,##0', 1);
   fx(rt, 6, `IF(COUNT(E${r0}:E${r1})=0,"",100)`, p.n ? 100 : '', '#,##0.00', 1);
-  fx(rt, 7, `IF(OR(E${rt}="",C${rt}=0),"",E${rt}/(C${rt}/100))`, p.tkp === null ? '' : p.tkp, '#,##0', 1);
+  // baris total, gantikan fx(rt, 7, ...):
+  const kpt = p.n ? kpGet('__kota', p.tj) : null;
+  if (kpt !== null) { const g = cell(ws, rt, 7, kpt, { b: 1 }); g.numFmt = '#,##0'; g.fill = YEL } else fx(rt, 7, `IF(OR(E${rt}="",C${rt}=0),"",E${rt}/(C${rt}/100))`, p.tkp === null ? '' : p.tkp, '#,##0', 1);
   ws.getCell(rt + 2, 1).value = 'Sel kuning (kolom Jiwa) dapat diisi manual; % Total Penduduk dan Kepadatan Penduduk terhitung otomatis.';
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 24; ws.getColumn(3).width = 14; ws.getColumn(4).width = 14; ws.getColumn(5).width = 16; ws.getColumn(6).width = 16; ws.getColumn(7).width = 20;
   const qq = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'pie', title: 'LUAS WILAYAH ADMINISTRASI (%)', legend: 'r', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'pie', title: 'LUAS WILAYAH ADMINISTRASI (%)', legend: 'r', from: { col: 8, row: 0 }, ext: { w: ex.w, h: ex.h },
     pointColors: d.rows.map((_, i) => PAL[i % PAL.length]),
-    series: [{ cat: `${qq}$B$${r0}:$B$${r1}`, catVals: d.rows.map(x => x.k), val: `${qq}$C$${r0}:$C$${r1}`, vals: d.rows.map(x => x.ha) }] });
+    series: [{ cat: `${qq}$B$${r0}:$B$${r1}`, catVals: d.rows.map(x => x.k), val: `${qq}$C$${r0}:$C$${r1}`, vals: d.rows.map(x => x.ha) }]
+  });
 }
 
 // =====================================================================
@@ -1270,10 +1305,12 @@ function excelPk(wb, ws, d, ex) {
   ws.getCell(rt + 2, 1).value = 'Sel kuning (Laki-Laki dan Perempuan) diisi manual; Jumlah terhitung otomatis. Grafik ikut berubah saat sel kuning diisi.';
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 34; ws.getColumn(3).width = 16; ws.getColumn(4).width = 16; ws.getColumn(5).width = 20;
   const qq = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${qq}$B$${r0}:$B$${r1}`;
-  addXChart({ sheet: ws.name, type: 'bar', dir: 'bar', valFmt: '#,##0', legend: 'b', from: { col: 6, row: 0 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'bar', dir: 'bar', valFmt: '#,##0', legend: 'b', from: { col: 6, row: 0 }, ext: { w: ex.w, h: ex.h },
     title: 'STATUS PEKERJAAN UTAMA PENDUDUK ' + d.wil.toUpperCase() + ' TAHUN ' + PK_TAHUN + ' (JIWA)',
     series: [{ name: 'Laki-Laki', cat, catVals: PK_STATUS, val: `${qq}$C$${r0}:$C$${r1}`, vals: c.l.map(v => v || 0), color: NAVY },
-             { name: 'Perempuan', cat, catVals: PK_STATUS, val: `${qq}$D$${r0}:$D$${r1}`, vals: c.p.map(v => v || 0), color: '#ffc000' }] });
+    { name: 'Perempuan', cat, catVals: PK_STATUS, val: `${qq}$D$${r0}:$D$${r1}`, vals: c.p.map(v => v || 0), color: '#ffc000' }]
+  });
 }
 
 // =====================================================================
@@ -1452,9 +1489,11 @@ function excelRK(wb, ws, d, ex) {
   ws.getColumn(10).width = 32; for (let j = 0; j < d.chart.length; j++) ws.getColumn(11 + j).width = 20;
   ws.views = [{ state: 'frozen', ySplit: 1 }];
   const qq = `'${ws.name.replace(/'/g, "''")}'!`;
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'r', from: { col: 9, row: 3 }, ext: { w: ex.w, h: ex.h },
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'r', from: { col: 9, row: 3 }, ext: { w: ex.w, h: ex.h },
     title: 'LAJU PERUBAHAN PENGGUNAAN TANAH REKLASIFIKASI ' + d.wil.toUpperCase() + ' TAHUN ' + TH_LAMA + '-' + TH_BARU + ' (%)',
-    series: d.chart.map((r, j) => ({ name: r.c, nameRef: `${qq}${A1(1, 11 + j, 1, 1)}`, cat: `${qq}$J$2`, catVals: ['Laju Pertumbuhan (%)'], val: `${qq}${A1(2, 11 + j, 1, 1)}`, vals: [r.py], color: PAL2[j % PAL2.length] })) });
+    series: d.chart.map((r, j) => ({ name: r.c, nameRef: `${qq}${A1(1, 11 + j, 1, 1)}`, cat: `${qq}$J$2`, catVals: ['Laju Pertumbuhan (%)'], val: `${qq}${A1(2, 11 + j, 1, 1)}`, vals: [r.py], color: PAL2[j % PAL2.length] }))
+  });
 }
 
 // =====================================================================
@@ -1578,10 +1617,12 @@ function excelSK(wb, ws, d, ex) {
   ws.getCell(rt + 1, 1).value = 'Sel kuning (Belum Ada HAT / Ada HAT, Ha) belum ada datanya dan dapat diisi manual. Kepadatan Penduduk mengikuti sheet Tabel III-1.';
   ws.getColumn(1).width = 6; ws.getColumn(2).width = 20; for (let k = 3; k <= 10; k++) ws.getColumn(k).width = 14; ws.getColumn(11).width = 20;
   const qq = `'${ws.name.replace(/'/g, "''")}'!`, cat = `${qq}$B$${r0}:$B$${r1}`, R = L => `${qq}$${L}$${r0}:$${L}$${r1}`, cats = d.rows.map(x => x.k);
-  addXChart({ sheet: ws.name, type: 'bar', legend: 'b', from: { col: 2, row: rt + 2 }, ext: { w: ex.w, h: ex.h }, title: 'POTENSI SOSIAL EKONOMI ' + d.wil.toUpperCase() + ' TAHUN 2026',
+  addXChart({
+    sheet: ws.name, type: 'bar', legend: 'b', from: { col: 2, row: rt + 2 }, ext: { w: ex.w, h: ex.h }, title: 'POTENSI SOSIAL EKONOMI ' + d.wil.toUpperCase() + ' TAHUN 2026',
     series: [{ name: 'Tersedia', cat, catVals: cats, val: R('C'), vals: d.rows.map(x => x.a), color: '#ffc000' },
-             { name: 'Ada HAT', cat, catVals: cats, val: R('I'), vals: c.hh.map(v => v || 0), color: NAVY },
-             { name: 'Kepadatan Penduduk (jiwa/km2)', cat, catVals: cats, val: R('K'), vals: c.kp.map(v => v || 0), color: '#c00000' }] });
+    { name: 'Ada HAT', cat, catVals: cats, val: R('I'), vals: c.hh.map(v => v || 0), color: NAVY },
+    { name: 'Kepadatan Penduduk (jiwa/km2)', cat, catVals: cats, val: R('K'), vals: c.kp.map(v => v || 0), color: '#c00000' }]
+  });
 }
 
 // =====================================================================

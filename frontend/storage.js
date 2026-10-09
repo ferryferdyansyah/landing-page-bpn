@@ -25,7 +25,8 @@
     const iconFiles = '<svg class="i" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     const iconOut = '<svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>';
     const pick = $('#pick');
-    pick.insertAdjacentHTML('beforebegin', `<button class="btn ghost" id="myfiles">${iconFiles}File Saya</button>`);
+    pick.insertAdjacentHTML('beforebegin', `<button class="btn ghost" id="myfiles">${iconFiles}File Saya</button><button class="btn ghost" id="ahome">Beranda</button>`);
+    $('#ahome').onclick = () => location.href = '../index.html';
     pick.insertAdjacentHTML('afterend', `<span class="usr" title="${esc(user.email)}">${esc(user.email)}</span><button class="icon-btn" id="logout" title="Keluar" aria-label="Keluar">${iconOut}</button>`);
     document.body.insertAdjacentHTML('beforeend', `<div class="modal" id="fmod" hidden><div class="mbox" role="dialog" aria-label="File Saya"><div class="mh"><b>File Saya</b><button class="btn sm ghost" id="fclose">Tutup</button></div><div class="fl" id="flist"></div></div></div>`);
 
