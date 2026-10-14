@@ -1,17 +1,21 @@
 // main.js
 // Penghubung: menangani upload/drag-drop ZIP, memanggil parser, render, dan tombol download.
 
-async function load(file){
- const st=document.getElementById('status'),dl=document.getElementById('dl');
- st.textContent='Membaca '+file.name+'…';dl.disabled=true;
- try{
-  const zip=await JSZip.loadAsync(file);
-  const e=Object.values(zip.files).find(f=>!f.dir&&/\.dbf$/i.test(f.name));
-  if(!e){ROWS=[];COLS=[];render();st.textContent='File .dbf tidak ditemukan di dalam ZIP.';return}
-     const r = parseDBF(await e.async('arraybuffer')), cc = canonCols(r.cols, r.rows); ROWS = r.rows; COLS = cc.cols; render();
-     const miss = ['LUASHA', 'WADMKC'].filter(c => !COLS.includes(c));
-     st.textContent = `${file.name}: ${ROWS.length.toLocaleString('id')} baris, ${COLS.length} kolom.` + (cc.renamed.length ? ` Nama kolom disesuaikan: ${cc.renamed.join(', ')}.` : '') + (miss.length ? ` Peringatan: kolom ${miss.join(', ')} tidak ditemukan.` : ''); dl.disabled = false;
- }catch(err){ROWS=[];COLS=[];render();st.textContent='Gagal membaca file: '+err.message}
+async function load(file) {
+    const st = document.getElementById('status'), dl = document.getElementById('dl');
+    st.textContent = 'Membaca ' + file.name + '…'; dl.disabled = true;
+    try {
+        const zip = await JSZip.loadAsync(await DZ.read(drop, file));
+        const e = Object.values(zip.files).find(f => !f.dir && /\.dbf$/i.test(f.name));
+        if (!e) { ROWS = []; COLS = []; render(); st.textContent = 'File .dbf tidak ditemukan di dalam ZIP.'; DZ.fail(drop); return }
+
+        const r = parseDBF(await e.async('arraybuffer')), cc = canonCols(r.cols, r.rows); ROWS = r.rows; COLS = cc.cols; render();
+        const miss = ['LUASHA', 'WADMKC'].filter(c => !COLS.includes(c));
+        st.textContent = `${file.name}: ${ROWS.length.toLocaleString('id')} baris, ${COLS.length} kolom.` + (cc.renamed.length ? ` Nama kolom disesuaikan: ${cc.renamed.join(', ')}.` : '') + (miss.length ? ` Peringatan: kolom ${miss.join(', ')} tidak ditemukan.` : '');
+        dl.disabled = false;
+
+        DZ.done(drop, file);
+    } catch (err) { ROWS = []; COLS = []; render(); st.textContent = 'Gagal membaca file: ' + err.message; DZ.fail(drop) }
 }
 const drop=document.getElementById('drop'),fi=document.getElementById('file');
 drop.onclick=()=>fi.click();fi.onchange=()=>fi.files[0]&&load(fi.files[0]);

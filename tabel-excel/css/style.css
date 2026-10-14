@@ -66,3 +66,78 @@ td.idx{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
 .pager .sp{margin-left:auto}
 @media(max-width:640px){header{padding:12px 16px}main{padding:14px 12px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.dz-ui {
+    display: none
+}
+
+.dz.loading .dz-ui,
+.dz.done .dz-ui {
+    display: block
+}
+
+.dz.loading>:not(.dz-ui),
+.dz.done>:not(.dz-ui) {
+    display: none !important
+}
+
+.dz.done {
+    border-style: solid;
+    border-color: var(--acc)
+}
+
+.dz-name {
+    color: var(--tx);
+    font-size: 15px;
+    font-weight: 700;
+    word-break: break-all
+}
+
+.dz-sub {
+    font-size: 12.5px;
+    color: var(--mut);
+    margin-top: 4px
+}
+
+.dz-bar {
+    height: 8px;
+    border-radius: 99px;
+    background: var(--bd);
+    overflow: hidden;
+    margin: 12px auto 0;
+    max-width: 420px
+}
+
+.dz-fill {
+    height: 100%;
+    width: 0;
+    background: var(--acc);
+    border-radius: 99px;
+    transition: width .2s ease
+}
+
+.dz-check {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 6px;
+    border-radius: 50%;
+    background: var(--acc);
+    color: var(--acc-tx);
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    font-weight: 700;
+    animation: dz-pop .35s cubic-bezier(.2, 1.4, .4, 1)
+}
+
+@keyframes dz-pop {
+    from {
+        transform: scale(.4);
+        opacity: 0
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1
+    }
+}

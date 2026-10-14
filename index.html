@@ -65,6 +65,11 @@ h1{margin:0 0 10px;font-size:clamp(28px,4.5vw,44px);line-height:1.1;letter-spaci
       <p>Ubah data atribut shapefile menjadi tabel rekap lengkap beserta grafik, lalu unduh sebagai file Excel.</p>
       <button class="cta" data-app="tabel">Buka Tabel</button>
     </section>
+    <section class="card">
+      <h2>Generate PPT</h2>
+      <p>Unggah template dan data shapefile, lihat pratinjau slide yang bisa diedit, lalu simpan sebagai PowerPoint atau PDF.</p>
+      <button class="cta" data-app="ppt">Buka Generate PPT</button>
+    </section>
   </div>
 </main>
 
@@ -83,7 +88,8 @@ h1{margin:0 0 10px;font-size:clamp(28px,4.5vw,44px);line-height:1.1;letter-spaci
 <script>
 const APPS = {
   dashboard: { name: 'Dashboard Peta & Analisis', url: 'frontend/index.html', next: 'index.html' },
-  tabel:     { name: 'Tabel Rekap & Excel',       url: 'tabel-excel/index.html', next: '../tabel-excel/index.html' }
+  tabel:     { name: 'Tabel Rekap & Excel',       url: 'tabel-excel/index.html', next: '../tabel-excel/index.html' },
+  ppt:       { name: 'Generate PPT',              url: 'ppt/index.html', next: '..ppt/index.html' }
 };
 const $ = s => document.querySelector(s), mod = $('#mod');
 let app = null, session = null;

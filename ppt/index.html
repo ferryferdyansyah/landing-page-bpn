@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Generate PPT - Analisis Penggunaan Tanah</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet" />
+    <script>
+      document.documentElement.dataset.theme = "dark";
+      document.documentElement.classList.add("guard");
+    </script>
+    <link rel="stylesheet" href="css/ppt.css" />
+    <!-- Library eksternal (perlu internet) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/shpjs@4.0.4/dist/shp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></svg>
+      </div>
+      <h1>Generate PPT<small>Template presentasi + data shapefile → slide siap edit &amp; simpan</small></h1>
+      <button id="theme" title="Ganti tema" aria-label="Ganti tema"></button>
+    </header>
+    <main>
+      <section id="input">
+        <div class="ins">
+          <div class="dzb" id="dropT"><b>1. Template presentasi</b><br /><small>Klik atau seret file template (.pdf atau .pptx)</small><input type="file" id="fileT" accept=".pdf,.pptx" hidden /></div>
+          <div class="dzb" id="dropD"><b>2. Data DJPA (ZIP shapefile)</b><br /><small>Wajib. ZIP berisi .shp, .dbf, .prj (mis. DJPA.zip)</small><input type="file" id="fileD" accept=".zip" hidden /></div>
+          <div class="dzb" id="dropS"><b>3. Titik Survei (TS.zip)</b><br /><small>Opsional. ZIP shapefile titik survei lapangan</small><input type="file" id="fileS" accept=".zip" hidden /></div>
+          <div class="dzb" id="dropH"><b>4. Hak Atas Tanah (HAT.zip)</b><br /><small>Opsional. ZIP shapefile HAT (kolom TIPEHAK, LUAS_HA)</small><input type="file" id="fileH" accept=".zip" hidden /></div>
+        </div>
+        <div class="optrow">
+          <label for="kab">Nama Kabupaten/Kota (kosongkan = otomatis dari data)</label>
+          <input type="text" id="kab" placeholder="mis. Kota Blitar" />
+          <label for="basemap">Basemap peta</label>
+          <select id="basemap"><option value="google" selected>Google Satelit (jika gagal → Esri)</option><option value="esri">Esri World Imagery</option><option value="none">Tanpa basemap</option></select>
+          <button id="gen" disabled>Generate Presentasi</button>
+        </div>
+      </section>
+      <div id="status" class="hint">Unggah template dan DJPA (wajib); TS dan HAT opsional, lalu klik Generate.</div>
+
+      <section id="editor">
+        <div id="thumbs"></div>
+        <div>
+          <div class="tbar">
+            <button id="back" class="ghost">← Ganti input</button>
+            <span id="cnt" class="hint"></span><span class="sp"></span>
+            <button id="up" class="ghost" title="Geser slide ke atas">↑</button><button id="dn" class="ghost" title="Geser slide ke bawah">↓</button>
+            <button id="dup" class="ghost">Duplikat slide</button><button id="del" class="ghost">Hapus slide</button>
+            <button id="addT" class="ghost">+ Teks</button><button id="addI" class="ghost">+ Gambar</button>
+            <button id="fsDn" class="ghost" title="Perkecil huruf elemen terpilih">A−</button><button id="fsUp" class="ghost" title="Perbesar huruf elemen terpilih">A+</button>
+            <button id="delEl" class="ghost">Hapus elemen</button>
+            <button id="pdf">Simpan PDF</button><button id="pptx">Simpan PPTX</button>
+          </div>
+          <div class="hint" style="margin-bottom:8px">Klik teks atau sel tabel untuk mengedit. Klik elemen untuk memilih (Delete = hapus), lalu seret ✥ untuk memindah atau kotak di pojok kanan-bawah untuk mengubah ukuran. Gambar/grafik juga bisa diseret langsung.</div>
+          <div class="stagewrap"><div id="stage" class="stage"></div></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="busy" hidden>
+      <div class="bbox">
+        <div class="spin"></div>
+        <b>Membuat presentasi…</b>
+        <div class="dz-bar"><div class="dz-fill" id="bfill"></div></div>
+        <div class="dz-sub" id="bmsg"></div>
+        <ul class="steps" id="bsteps"></ul>
+      </div>
+    </div>
+    <div id="pages"></div>
+
+    <script src="js/bg.js"></script>
+    <script src="../frontend/assets/simbologi.js"></script>
+    <script src="js/dropzone-ui.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/slides.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../frontend/supabase.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

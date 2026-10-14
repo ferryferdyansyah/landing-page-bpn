@@ -17,13 +17,13 @@ const HAT_GALAT = ['hak belum terdaftar', 'belum terdaftar'];                   
         if (!ROWS.length) { st.textContent = 'Unggah file utama (ZIP shapefile) dulu, baru file HAT.'; return }
         st.textContent = 'Membaca HAT ' + file.name + '…';
         try {
-            const zip = await JSZip.loadAsync(file);
+            const zip = await JSZip.loadAsync(await DZ.read(drop2, file));   // <- diubah (tadinya JSZip.loadAsync(file))
             const e = Object.values(zip.files).find(f => !f.dir && /\.dbf$/i.test(f.name));
-            if (!e) { st.textContent = 'File .dbf tidak ditemukan di dalam ZIP HAT.'; return }
+            if (!e) { st.textContent = 'File .dbf tidak ditemukan di dalam ZIP HAT.'; DZ.fail(drop2); return }   // <- tambah DZ.fail
             const p = parseDBF(await e.async('arraybuffer')), cc = canonCols(p.cols, p.rows, ['TIPEHAK', 'LUASHA', 'WADMKC']);
             const cols = cc.cols, rows = p.rows;   // LUAS_HA / luas_ha / LUASHA dianggap sama
             const miss = ['TIPEHAK', 'LUASHA', 'WADMKC'].filter(c => !cols.includes(c));
-            if (miss.length) { st.textContent = 'Kolom HAT tidak ditemukan: ' + miss.join(', '); return }
+            if (miss.length) { st.textContent = 'Kolom HAT tidak ditemukan: ' + miss.join(', '); DZ.fail(drop2); return }   // <- tambah DZ.fail
 
             const agg = {};
             for (const r of rows) {
@@ -53,7 +53,8 @@ const HAT_GALAT = ['hak belum terdaftar', 'belum terdaftar'];                   
             if (unmatched.length) msg += ` Peringatan: kecamatan di HAT tidak cocok dengan file utama → ${unmatched.join(', ')}.`;
             if (ok < kecs.length) msg += ` ${kecs.length - ok} kecamatan di file utama tidak ada di HAT.`;
             st.textContent = msg;
-        } catch (err) { st.textContent = 'Gagal membaca HAT: ' + err.message }
+            DZ.done(drop2, file);   // <- tambah: kotak berubah jadi "sudah diunggah"
+        } catch (err) { st.textContent = 'Gagal membaca HAT: ' + err.message; DZ.fail(drop2) }   // <- tambah DZ.fail
     }
 
     drop2.onclick = () => fi2.click();
