@@ -184,30 +184,64 @@
   };
 
   // ---------- Simpan PPTX ----------
-  const hx = c => { c = String(c).replace('#', ''); return c.length === 3 ? c.split('').map(x => x + x).join('') : c.toUpperCase() };
-  const b64 = async url => { if (/^data:/.test(url)) return url.replace(/^data:/, ''); const r = await fetch(url), b = await r.blob(); return new Promise(ok => { const f = new FileReader(); f.onload = () => ok(String(f.result).replace(/^data:/, '')); f.readAsDataURL(b) }) };
+  const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  // Warna harus 6 digit hex; selain itu pakai cadangan (PptxGenJS membuat file rusak bila warna tidak valid)
+  const hx = (c, fb = '000000') => { c = String(c ?? '').trim().replace('#', ''); if (/^[0-9a-f]{3}$/i.test(c)) c = c.split('').map(x => x + x).join(''); return /^[0-9a-f]{6}$/i.test(c) ? c.toUpperCase() : fb };
+  // Buang karakter yang tidak boleh ada di XML (sering muncul dari kolom DBF) -> penyebab PPTX "rusak"/tidak bisa dibuka
+  const clean = s => { s = String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, ''); return s.toWellFormed ? s.toWellFormed() : s };
+  const num = v => isFinite(+v) ? +v : 0;
+  const blobToData = blob => new Promise((ok, no) => { const f = new FileReader(); f.onload = () => ok(String(f.result)); f.onerror = () => no(f.error); f.readAsDataURL(blob) });
+  const toDataURL = async url => { if (/^data:/.test(url)) return url; const r = await fetch(url); if (!r.ok) throw new Error('Gagal memuat gambar'); return blobToData(await r.blob()) };
+  // PowerPoint aman hanya dengan PNG/JPEG/GIF -> format lain (WebP, SVG, BMP) diubah ke PNG lewat canvas. Hasil: "image/xxx;base64,..."
+  const safeImage = async url => {
+    const d = await toDataURL(url), m = /^data:([^;,]+)/.exec(d);
+    if (m && /^image\/(png|jpe?g|gif)$/i.test(m[1]) && /;base64,/.test(d)) return d.replace(/^data:/, '');
+    const im = new Image(); await new Promise((ok, no) => { im.onload = ok; im.onerror = () => no(new Error('Format gambar tidak didukung')); im.src = d });
+    const cv = document.createElement('canvas'); cv.width = im.naturalWidth || 300; cv.height = im.naturalHeight || 300; cv.getContext('2d').drawImage(im, 0, 0);
+    return cv.toDataURL('image/png').replace(/^data:/, '');
+  };
   $('#pptx').onclick = async () => {
-    const b = $('#pptx'); b.disabled = true; const old = b.textContent; b.textContent = 'Menyiapkan…';
+    const b = $('#pptx'); if (b.disabled) return; b.disabled = true; const old = b.textContent; b.textContent = 'Menyiapkan…'; const warn = [];
     try {
-      const px = new PptxGenJS(); px.layout = 'LAYOUT_WIDE'; const k = 13.333 / 1280, F = 'Montserrat', bg = {};
-      for (const n in BG) bg[n] = await b64(BG[n]);
-      deck.forEach((s, n) => {
-        const sl = px.addSlide(); sl.background = { data: bg[s.bg] };
-        s.els.forEach(e => {
-          const pos = { x: e.x * k, y: e.y * k, w: e.w * k, h: (e.h || 30) * k };
-          if (e.t === 'text') sl.addText(e.auto === 'pg' ? String(n + 1) : e.text, { ...pos, fontFace: F, fontSize: e.sz * .75, bold: !!e.b, color: hx(e.c), align: e.al, valign: e.v === 'middle' ? 'middle' : 'top', margin: e.fill ? [0, 8, 0, 8] : 0, ...(e.fill ? { fill: { color: hx(e.fill) } } : {}) });
-          else if (e.t === 'table') {
-            const cw = (e.cw || e.head.map(() => 1 / e.head.length)).map(w => w * e.w * k), isN = c => (e.num || []).includes(c);
-            const head = e.head.map((h, c) => ({ text: h, options: { bold: true, fill: { color: 'FDBF2D' }, color: '10243A', align: isN(c) ? 'right' : 'left' } }));
-            const rows = e.rows.map((r, ri) => r.map((v, c) => ({ text: v, options: { align: isN(c) ? 'right' : 'left', bold: !!((e.tot && ri === e.rows.length - 1) || (e.bold || []).includes(ri)), color: '10243A', ...(e.tot && ri === e.rows.length - 1 ? { fill: { color: 'E4ECF4' } } : (e.bold || []).includes(ri) ? { fill: { color: 'FDF1D6' } } : {}) } })));
-            sl.addTable([head, ...rows], { x: pos.x, y: pos.y, w: e.w * k, colW: cw, rowH: e.rh * k, fontFace: F, fontSize: e.sz * .75, border: { type: 'solid', color: '9FB2C4', pt: .75 }, valign: 'middle' });
-          } else if (e.t === 'bar') sl.addChart(px.charts.BAR, [{ name: 'Luas (Ha)', labels: e.items.map(i => i.k), values: e.items.map(i => i.v) }], { ...pos, barDir: 'bar', catAxisOrientation: 'maxMin', chartColors: [hx(NAVY)], showValue: true, dataLabelFormatCode: e.fmt === 'pct' ? '#,##0.00"%"' : e.fmt === 'int' ? '#,##0' : '#,##0.00', dataLabelFontSize: 9, catAxisLabelFontSize: 9, valAxisHidden: true, valGridLine: { style: 'none' }, showLegend: false, barGapWidthPct: 40 });
-          else if (e.t === 'pie') sl.addChart(px.charts.PIE, [{ name: 'Luas (Ha)', labels: e.items.map(i => i.k), values: e.items.map(i => i.v) }], { ...pos, chartColors: e.items.map((i, n) => hx(i.c || PAL[n % PAL.length])), showLegend: true, legendPos: 'r', legendFontSize: 9, showPercent: true, showValue: false, dataLabelColor: 'FFFFFF', dataLabelFontSize: 9 });
-          else if (e.t === 'img') sl.addImage({ data: e.src.replace(/^data:/, ''), ...pos });
-        });
-      });
-      let blob; try { blob = await px.write({ outputType: 'blob' }) } catch (e) { blob = await px.write('blob') }
+      if (typeof PptxGenJS === 'undefined') {
+        const load = u => new Promise((ok, no) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => no(new Error(u)); document.head.append(s) });
+        for (const u of ['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', 'https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', 'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js']) { try { await load(u); if (typeof PptxGenJS !== 'undefined') break } catch (e) { console.warn('Gagal memuat', e.message) } }
+        if (typeof PptxGenJS === 'undefined') throw new Error('Pustaka PptxGenJS tidak bisa dimuat dari semua sumber. Periksa koneksi internet, atau matikan ad-blocker/firewall untuk CDN, lalu muat ulang halaman (Ctrl+F5).');
+      }      if (!deck || !deck.length) throw new Error('Belum ada slide.');
+      const px = new PptxGenJS(); px.layout = 'LAYOUT_WIDE'; const k = 13.333 / 1280, F = 'Montserrat', cache = new Map();
+      const img = async u => { if (!cache.has(u)) cache.set(u, await safeImage(u)); return cache.get(u) };
+      const bg = {}; for (const n in BG) { try { bg[n] = await img(BG[n]) } catch (e) { warn.push('latar ' + n) } }
+      for (let n = 0; n < deck.length; n++) {
+        const s = deck[n]; b.textContent = `PPTX ${n + 1}/${deck.length}…`;
+        const sl = px.addSlide(); if (bg[s.bg]) sl.background = { data: bg[s.bg] };
+        for (let i = 0; i < s.els.length; i++) {
+          const e = s.els[i];
+          try {
+            const pos = { x: num(e.x) * k, y: num(e.y) * k, w: Math.max(.1, num(e.w) * k), h: Math.max(.1, num(e.h || 30) * k) }, fsz = v => Math.max(6, Math.round(num(v) * 75) / 100);
+            if (e.t === 'text') sl.addText(clean(e.auto === 'pg' ? n + 1 : e.text), { ...pos, fontFace: F, fontSize: fsz(e.sz), bold: !!e.b, color: hx(e.c), align: ['left', 'center', 'right', 'justify'].includes(e.al) ? e.al : 'left', valign: e.v === 'middle' ? 'middle' : 'top', margin: e.fill ? [0, 8, 0, 8] : 0, ...(e.fill ? { fill: { color: hx(e.fill) } } : {}) });
+            else if (e.t === 'table') {
+              const nc = e.head.length, cw0 = (e.cw && e.cw.length === nc ? e.cw : e.head.map(() => 1 / nc)), sum = cw0.reduce((a, c) => a + c, 0) || 1, cw = cw0.map(w => w / sum * pos.w), isN = c => (e.num || []).includes(c);
+              const head = e.head.map((h, c) => ({ text: clean(h), options: { bold: true, fill: { color: 'FDBF2D' }, color: '10243A', align: isN(c) ? 'right' : 'left' } }));
+              const rows = e.rows.map((r, ri) => Array.from({ length: nc }, (_, c) => { const last = e.tot && ri === e.rows.length - 1, grp = (e.bold || []).includes(ri); return { text: clean(r[c]), options: { align: isN(c) ? 'right' : 'left', bold: !!(last || grp), color: '10243A', ...(last ? { fill: { color: 'E4ECF4' } } : grp ? { fill: { color: 'FDF1D6' } } : {}) } } }));
+              sl.addTable([head, ...rows], { x: pos.x, y: pos.y, w: pos.w, colW: cw, rowH: Math.max(.15, num(e.rh) * k), fontFace: F, fontSize: fsz(e.sz), border: { type: 'solid', color: '9FB2C4', pt: .75 }, valign: 'middle' });
+            } else if (e.t === 'bar') {
+              const it = (e.items || []).map(x => ({ k: clean(x.k).slice(0, 120), v: num(x.v) }));
+              if (!it.length) continue; // grafik kosong membuat file tidak valid
+              sl.addChart(px.charts.BAR, [{ name: 'Luas (Ha)', labels: it.map(x => x.k), values: it.map(x => x.v) }], { ...pos, barDir: 'bar', catAxisOrientation: 'maxMin', chartColors: [hx(NAVY)], showValue: true, dataLabelFormatCode: e.fmt === 'pct' ? '#,##0.00"%"' : e.fmt === 'int' ? '#,##0' : '#,##0.00', dataLabelFontSize: 9, catAxisLabelFontSize: 9, valAxisHidden: true, valGridLine: { style: 'none' }, showLegend: false, barGapWidthPct: 40 });
+            } else if (e.t === 'pie') {
+              const it = (e.items || []).map((x, j) => ({ k: clean(x.k).slice(0, 120), v: num(x.v), c: hx(x.c || PAL[j % PAL.length], hx(PAL[j % PAL.length])) })).filter(x => x.v > 0);
+              if (!it.length) continue;
+              sl.addChart(px.charts.PIE, [{ name: 'Luas (Ha)', labels: it.map(x => x.k), values: it.map(x => x.v) }], { ...pos, chartColors: it.map(x => x.c), showLegend: true, legendPos: 'r', legendFontSize: 9, showPercent: true, showValue: false, dataLabelColor: 'FFFFFF', dataLabelFontSize: 9 });
+            } else if (e.t === 'img') sl.addImage({ data: await img(e.src), ...pos });
+          } catch (err) { console.warn('PPTX: elemen dilewati', n + 1, e.t, err); warn.push(`slide ${n + 1} (${e.t})`) }
+        }
+        await wait(); // beri napas ke browser agar tombol/progres tidak membeku
+      }
+      let blob;
+      try { blob = await px.write({ outputType: 'blob' }) } catch (e1) { console.warn('write blob gagal, coba arraybuffer', e1); blob = await px.write({ outputType: 'arraybuffer' }) }
+      if (!(blob instanceof Blob)) blob = new Blob([blob], { type: PPTX_MIME }); else if (blob.type !== PPTX_MIME) blob = new Blob([blob], { type: PPTX_MIME });
       saveBlob(blob, baseName() + '.pptx');
+      if (warn.length) alert('PPTX tersimpan, tetapi beberapa elemen dilewati: ' + [...new Set(warn)].slice(0, 8).join(', '));
     } catch (err) { console.error(err); alert('Gagal membuat PPTX: ' + err.message) }
     b.disabled = false; b.textContent = old;
   };
