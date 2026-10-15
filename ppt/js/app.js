@@ -23,7 +23,7 @@
   const root = document.documentElement, tb = $('#theme'); tb.onclick = () => { root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light'; tb.textContent = root.dataset.theme === 'light' ? '☾' : '☀' }; tb.textContent = '☀';
 
   // ---------- Input (dengan animasi progress unggah) ----------
-  const ready = () => { $('#gen').disabled = !(tplBuf && dataBuf) };
+  const ready = () => { $('#gen').disabled = !dataBuf };
   function bind(drop, fi, cb) {
     drop.onclick = () => fi.click(); fi.onchange = () => fi.files[0] && pick(fi.files[0]);
     ['dragover', 'dragenter'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over') }));
@@ -31,7 +31,6 @@
     drop.addEventListener('drop', e => e.dataTransfer.files[0] && pick(e.dataTransfer.files[0]));
     async function pick(f) { try { const b = await DZ.read(drop, f); cb(f, b); DZ.done(drop, f) } catch (err) { DZ.fail(drop); $('#status').textContent = 'Gagal membaca file: ' + err.message } ready() }
   }
-  bind($('#dropT'), $('#fileT'), (f, b) => { if (!/\.(pdf|pptx)$/i.test(f.name)) throw new Error('Template harus berformat .pdf atau .pptx'); tplBuf = b; tplName = f.name });
   bind($('#dropD'), $('#fileD'), (f, b) => { if (!/\.zip$/i.test(f.name)) throw new Error('Data harus berupa .zip shapefile'); dataBuf = b; dataName = f.name });
 
   bind($('#dropH'), $('#fileH'), (f, b) => { if (!/\.zip$/i.test(f.name)) throw new Error('HAT harus berupa .zip shapefile'); hatBuf = b; hatName = f.name });
@@ -47,12 +46,20 @@
   }
   $('#gen').onclick = async () => {
     try {
-      busy(true, 0, 5, 'Membaca ' + tplName + '…'); await wait();
-      const pages = await parseTemplate(tplName, tplBuf);
+      // 1) simbologi dari simbologi.stylx (kalau gagal, peta tetap jalan dengan warna palet)
+      let symNote = '';
+      busy(true, 0, 3, 'Memuat simbologi (simbologi.stylx)…'); await wait();
+      try { await loadSimbologi() } catch (e) { console.warn(e); symNote = ' Simbologi .stylx gagal dimuat (' + e.message + ') - dipakai warna palet.' }
+
+      // 2) template dari frontend/assets/template.pdf
+      busy(true, 0, 8, 'Memuat template.pdf…'); await wait();
+      const tr = await fetch('../frontend/assets/template.pdf');
+      if (!tr.ok) throw new Error('template.pdf tidak ditemukan (HTTP ' + tr.status + ')');
+      const pages = await parseTemplate('template.pdf', await tr.arrayBuffer());
       busy(true, 1, 20, 'Membaca ' + dataName + '…'); await wait();
       const rows = await readShapefile(dataBuf.slice(0), (p, m) => busy(true, 1, p, m));
       busy(true, 2, 75, rows.length.toLocaleString('id-ID') + ' poligon dibaca'); await wait();
-      let hat = null, ts = null, extra = '';
+      let hat = null, ts = null, extra = symNote;
       if (hatBuf) { busy(true, 1, 78, 'Membaca ' + hatName + '…'); await wait(); try { hat = await readHat(hatBuf.slice(0), () => { }) } catch (e) { extra += ' HAT dilewati: ' + e.message + '.'; console.warn(e) } }
       if (tsBuf) { busy(true, 1, 82, 'Membaca ' + tsName + '…'); await wait(); try { ts = await readPoints(tsBuf.slice(0), () => { }, rows) } catch (e) { extra += ' TS dilewati: ' + e.message + '.'; console.warn(e) } }
       const nama = $('#kab').value.trim() || rows[0].WADMKK || 'Kabupaten/Kota';
@@ -94,6 +101,11 @@
       if (e.t === 'table') return `<div ${c} style="${style(e)}">${tableHTML(e, i, edit)}</div>`;
       if (e.t === 'bar') return `<div ${c} style="${style(e)}">${svgBar(e)}</div>`;
       if (e.t === 'pie') return `<div ${c} style="${style(e)}">${svgPie(e)}</div>`;
+      if (e.t === 'ph') {
+        const pc = `class="el ph${e.src ? '' : ' empty'}${edit && i === sel ? ' sel' : ''}" data-i="${i}"`;
+        if (e.src) return `<div ${pc} style="${style(e)}" title="Klik untuk mengganti gambar"><img src="${e.src}" alt=""></div>`;
+        return edit ? `<div ${pc} style="${style(e)}clip-path:polygon(${e.poly.map(p => p[0] + 'px ' + p[1] + 'px').join(',')})"><span class="phint">📷 Klik atau seret gambar ke sini</span></div>` : '';
+      }
       return `<div ${c} style="${style(e)}"><img src="${e.src}" alt=""></div>`;
     }).join('');
     return d;
@@ -125,6 +137,7 @@
   function placeHandles() {
     const sl = stage.firstChild; if (!sl) return; sl.querySelectorAll('.hd').forEach(h => h.remove());
     const n = sel >= 0 && sl.querySelector(`.el[data-i="${sel}"]`); if (!n) return;
+    if (deck[cur].els[sel].t === 'ph') return;   // kotak foto tidak digeser/diubah ukurannya
     const x = n.offsetLeft, y = n.offsetTop, w = n.offsetWidth, h = n.offsetHeight;
     sl.insertAdjacentHTML('beforeend', `<div class="hd mv" data-act="mv" title="Seret untuk memindah" style="left:${x}px;top:${Math.max(0, y - 22)}px">✥</div><div class="hd rz" data-act="rz" title="Seret untuk mengubah ukuran" style="left:${x + w - 10}px;top:${y + h - 10}px"></div>`);
   }
@@ -144,6 +157,7 @@
     const hd = e.target.closest('.hd'); if (hd) return dragHandle(e, hd.dataset.act);
     const n = e.target.closest('.el'); if (!n) { sel = -1; mark(); return }
     sel = +n.dataset.i; mark();
+    if (deck[cur].els[sel].t === 'ph') return;
     // geser: tahan Alt untuk teks/tabel, atau seret langsung untuk gambar/grafik
     const el = deck[cur].els[sel], editable = el.t === 'text' || el.t === 'table';
     if (editable && !e.altKey) return; e.preventDefault();
@@ -152,7 +166,11 @@
     const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); thumbs() };
     addEventListener('mousemove', mv); addEventListener('mouseup', up);
   });
-  const delEl = () => { if (sel < 0) return; deck[cur].els.splice(sel, 1); sel = -1; show(true) };
+  const delEl = () => {
+    if (sel < 0) return; const el = deck[cur].els[sel];
+    if (el.t === 'ph') { if (el.src) { el.src = null; show(true) } return }
+    deck[cur].els.splice(sel, 1); sel = -1; show(true)
+  };
   addEventListener('keydown', e => { if (e.key === 'Delete' && sel >= 0 && !e.target.isContentEditable && $('#editor').classList.contains('on')) delEl() });
   $('#delEl').onclick = delEl;
   const fs = d => { const el = deck[cur].els[sel]; if (!el || !(el.t === 'text' || el.t === 'table')) return; if (el.t === 'text') el.sz = Math.max(8, el.sz + d); else el.sz = Math.max(8, el.sz + d); show(true) };
@@ -162,6 +180,27 @@
   $('#up').onclick = () => { if (cur > 0) { [deck[cur - 1], deck[cur]] = [deck[cur], deck[cur - 1]]; cur--; show() } };
   $('#dn').onclick = () => { if (cur < deck.length - 1) { [deck[cur + 1], deck[cur]] = [deck[cur], deck[cur + 1]]; cur++; show() } };
   $('#addI').onclick = () => { const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.onchange = () => { const f = fi.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const w = Math.min(600, im.width), h = Math.round(w * im.height / im.width); deck[cur].els.push({ t: 'img', x: 340, y: 150, w, h, src: r.result }); sel = deck[cur].els.length - 1; show(true) }; im.src = r.result }; r.readAsDataURL(f) }; fi.click() };
+  // ---------- Kotak foto (sampul & slide terakhir): klik / seret gambar untuk mengganti ----------
+  function pickPhoto(i) { const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.onchange = () => fi.files[0] && setPhoto(i, fi.files[0]); fi.click() }
+  async function setPhoto(i, file) {
+    try {
+      const el = deck[cur].els[i], raw = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(file) });
+      el.src = await composePhoto(el, raw); sel = i; show(true);
+    } catch (err) { alert('Gagal memasang gambar: ' + err.message) }
+  }
+  // Foto dipotong ala "cover" mengikuti poligon bingkai, ditempel di atas potongan latar asli -> satu JPEG (aman untuk PPTX & PDF)
+  async function composePhoto(el, raw) {
+    const load = s => new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => no(new Error('gambar tidak bisa dibaca')); im.src = s });
+    const [bg, ph] = await Promise.all([load(BG.cover), load(raw)]), K = 2, c = document.createElement('canvas'); c.width = el.w * K; c.height = el.h * K; const g = c.getContext('2d');
+    g.drawImage(bg, el.x, el.y, el.w, el.h, 0, 0, c.width, c.height);
+    g.save(); g.beginPath(); el.poly.forEach(([x, y], n) => n ? g.lineTo(x * K, y * K) : g.moveTo(x * K, y * K)); g.closePath(); g.clip();
+    const s = Math.max(c.width / ph.width, c.height / ph.height), w = ph.width * s, h = ph.height * s;
+    g.drawImage(ph, (c.width - w) / 2, (c.height - h) / 2, w, h); g.restore();
+    return c.toDataURL('image/jpeg', .92);
+  }
+  stage.addEventListener('click', e => { const n = e.target.closest('.el.ph'); if (n) pickPhoto(+n.dataset.i) });
+  stage.addEventListener('dragover', e => { if (e.target.closest('.el.ph')) e.preventDefault() });
+  stage.addEventListener('drop', e => { const n = e.target.closest('.el.ph'), f = e.dataTransfer.files[0]; if (n && f && /^image\//.test(f.type)) { e.preventDefault(); setPhoto(+n.dataset.i, f) } });
   $('#addT').onclick = () => { deck[cur].els.push({ t: 'text', x: 100, y: 300, w: 500, h: 60, text: 'Teks baru', sz: 20, c: '#10243a', al: 'left', v: 'top' }); sel = deck[cur].els.length - 1; show(true) };
 
   // ---------- Simpan PDF (langsung diunduh: 1 slide = 1 halaman) ----------
@@ -232,7 +271,7 @@
               const it = (e.items || []).map((x, j) => ({ k: clean(x.k).slice(0, 120), v: num(x.v), c: hx(x.c || PAL[j % PAL.length], hx(PAL[j % PAL.length])) })).filter(x => x.v > 0);
               if (!it.length) continue;
               sl.addChart(px.charts.PIE, [{ name: 'Luas (Ha)', labels: it.map(x => x.k), values: it.map(x => x.v) }], { ...pos, chartColors: it.map(x => x.c), showLegend: true, legendPos: 'r', legendFontSize: 9, showPercent: true, showValue: false, dataLabelColor: 'FFFFFF', dataLabelFontSize: 9 });
-            } else if (e.t === 'img') sl.addImage({ data: await img(e.src), ...pos });
+            } else if (e.t === 'img' || (e.t === 'ph' && e.src)) sl.addImage({ data: await img(e.src), ...pos });
           } catch (err) { console.warn('PPTX: elemen dilewati', n + 1, e.t, err); warn.push(`slide ${n + 1} (${e.t})`) }
         }
         await wait(); // beri napas ke browser agar tombol/progres tidak membeku

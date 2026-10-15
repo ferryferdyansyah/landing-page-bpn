@@ -159,6 +159,68 @@ function symPaints(name) {
   const p = { fills, stroke: d.stroke, sym: true }; SYMPAT.set(name, p); return p;
 }
 
+// ============ Muat simbologi langsung dari frontend/assets/simbologi.stylx ============
+const STYLX_URL = '../frontend/assets/simbologi.stylx';
+const _hx = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+function stylxCol(c) {
+  if (!c || !Array.isArray(c.values) || c.values.length < 3) return null;
+  const v = c.values; let r, g, b;
+  if (/HSV/.test(c.type || '')) {
+    const hh = v[0] / 60, s = v[1] / 100, w = v[2] / 100, i = Math.floor(hh) % 6, f = hh - Math.floor(hh), p = w * (1 - s), q = w * (1 - f * s), t = w * (1 - (1 - f) * s);
+    [r, g, b] = [[w, t, p], [q, w, p], [p, w, t], [p, q, w], [t, p, w], [w, p, q]][i].map(x => x * 255);
+  } else if (/CMYK/.test(c.type || '')) { const k = v[3] / 100;[r, g, b] = [0, 1, 2].map(j => 255 * (1 - v[j] / 100) * (1 - k)); }
+  else if (/HSL/.test(c.type || '')) return null;
+  else[r, g, b] = v;
+  return '#' + _hx(r) + _hx(g) + _hx(b);
+}
+const stylxImg = src => new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => no(new Error('gambar simbol tidak terbaca')); im.src = src; });
+// BMP 1-bit -> PNG: hitam diganti warna baru, putih jadi transparan (basemap tetap terlihat)
+async function stylxBmpToPng(url, subst) {
+  const im = await stylxImg(url), w = im.naturalWidth, h = im.naturalHeight; let nb = [0, 0, 0];
+  for (const s of subst || []) if ((s.oldColor.values || []).slice(0, 3).every(x => x === 0)) nb = s.newColor.values.slice(0, 3).map(Math.round);
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
+  const d = g.getImageData(0, 0, w, h), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { if (p[i] + p[i + 1] + p[i + 2] < 384) { p[i] = nb[0]; p[i + 1] = nb[1]; p[i + 2] = nb[2]; p[i + 3] = 255 } else p[i + 3] = 0 }
+  g.putImageData(d, 0, 0); return { src: c.toDataURL('image/png'), size: [w, h] };
+}
+// Satu item ITEMS.CONTENT (JSON CIM) -> spesifikasi simbol (bentuk sama dengan simbologi.js lama)
+function stylxSpec(j) {
+  const lineOf = sym => { for (const l of (sym || {}).symbolLayers || []) if (l.type === 'CIMSolidStroke') return [stylxCol(l.color), l.width ?? 1]; return [null, 1] };
+  const mkColor = l => { for (const a of ((l.symbol || {}).symbolLayers || [])) if (a.type === 'CIMSolidFill' || a.type === 'CIMSolidStroke') return stylxCol(a.color); return '#444444' };
+  const spec = { fill: null, stroke: null, hatch: [], pic: null, mk: null, _pic: null };
+  for (const l of j.symbolLayers || []) {
+    if (l.enable === false) continue; const t = l.type;
+    if (t === 'CIMSolidFill' && !spec.fill) spec.fill = stylxCol(l.color);
+    else if (t === 'CIMSolidStroke' && !spec.stroke) spec.stroke = { c: stylxCol(l.color), w: l.width ?? 1 };
+    else if (t === 'CIMHatchFill') { const [c, w] = lineOf(l.lineSymbol); spec.hatch.push({ a: l.rotation ?? 0, s: l.separation ?? 5, w, c }) }
+    else if ((t === 'CIMPictureFill' || t === 'CIMPictureMarker') && !spec._pic && l.url) spec._pic = { url: l.url, subst: l.colorSubstitutions, h: l.height || l.size, step: (l.markerPlacement || {}).stepX };
+    else if (t === 'CIMCharacterMarker' && !spec.mk) { const mp = l.markerPlacement || {}; spec.mk = { c: mkColor(l), size: l.size ?? 5, step: mp.stepX ?? 6, ch: l.characterIndex, font: l.fontFamilyName } }
+  }
+  return spec;
+}
+let _stylxP = null;
+// Panggil sekali sebelum buildSlides(); aman dipanggil berulang (di-cache). Mengisi SYMDEF/SYMIDX yang dipakai peta & legenda.
+function loadSimbologi() {
+  if (_stylxP) return _stylxP;
+  return _stylxP = (async () => {
+    const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/' + f });
+    const r = await fetch(STYLX_URL); if (!r.ok) throw new Error('simbologi.stylx tidak ditemukan (HTTP ' + r.status + ')');
+    const db = new SQL.Database(new Uint8Array(await r.arrayBuffer())), res = db.exec('SELECT NAME, CONTENT FROM ITEMS'); db.close();
+    const out = {};
+    for (const [name, c] of (res[0] ? res[0].values : [])) {
+      let spec; try { spec = stylxSpec(JSON.parse((typeof c === 'string' ? c : new TextDecoder().decode(c)).replace(/\0+$/, ''))) } catch (e) { continue }
+      if (spec._pic) { try { const p = await stylxBmpToPng(spec._pic.url, spec._pic.subst); spec.pic = { src: p.src, px: p.size[0], h: spec._pic.h || p.size[1], step: spec._pic.step } } catch (e) { console.warn('Simbol gambar dilewati:', name, e) } }
+      delete spec._pic;
+      spec.rep = (spec.hatch[0] && spec.hatch[0].c) || spec.fill || (spec.stroke && spec.stroke.c) || (spec.mk && spec.mk.c) || (spec.pic ? '#666666' : '#999999');
+      out[name] = spec;
+    }
+    Object.keys(SYMDEF).forEach(k => delete SYMDEF[k]); Object.assign(SYMDEF, out);
+    Object.keys(SYMIDX).forEach(k => delete SYMIDX[k]); Object.keys(SYMDEF).forEach(n => SYMIDX[symKey(n)] = n);
+    SYMPAT.clear(); SYMPIC.clear();
+    return Object.keys(SYMDEF).length;
+  })().catch(e => { _stylxP = null; throw e });
+}
+
 // ============ Basemap (tile satelit) ============
 const BASEMAPS = {
   google: { name: 'Google Satelit', url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', sub: '0123', attr: 'Imagery © Google', maxZ: 20 },

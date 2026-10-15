@@ -2,6 +2,8 @@
 // Model slide: {bg:'cover'|'outline'|'content', els:[ {t:'text'|'table'|'bar'|'pie'|'img', x,y,w,h, ...} ]}  (kanvas 1280x720)
 
 const NAVY = '#06416b', YEL = '#fdbf2d', ORG = '#e8650a';
+// Area foto di sampul & slide terakhir (bisa diganti pengguna). poly = bagian dalam bingkai kuning (relatif terhadap x,y elemen).
+const PH_COVER = { t: 'ph', x: 755, y: 0, w: 525, h: 720, poly: [[0, 219], [222, 0], [525, 0], [525, 720], [222, 720], [0, 501]], src: null };
 
 // ---------- Baca template ----------
 async function parseTemplate(name, buf) {
@@ -112,7 +114,7 @@ function buildSlides(R, pages, nama, ctx = {}) {
   S.push({ bg: 'cover', els: [
     tx(100, 150, 700, 70, 'INTEGRASI DATA', { sz: 56, b: 1, c: YEL }), tx(100, 220, 760, 140, 'NERACA PENATAGUNAAN\nTANAH REGIONAL', { sz: 44, b: 1, c: '#fff' }),
     tx(144, 349, 475, 58, NAMA, { sz: 26, b: 1, c: '#fff', v: 'middle', al: 'center' }),
-    tx(100, 420, 580, 34, tgl, { sz: 20, c: '#fff', al: 'center' }), tx(70, 495, 640, 110, bid.join('\n'), { sz: 20, b: 1, c: '#fff', al: 'center' })] });
+    tx(100, 420, 580, 34, tgl, { sz: 20, c: '#fff', al: 'center' }), tx(70, 495, 640, 110, bid.join('\n'), { sz: 20, b: 1, c: '#fff', al: 'center' }), {...PH_COVER}] });
   // ===== 2. Outline =====
   S.push({ bg: 'outline', els: [tx(118, 30, 500, 56, 'OUTLINE', { sz: 38, b: 1, c: NAVY, v: 'middle' }), ...OUTLINE.map((l, i) => tx(209, 98 + i * 60.5, 820, 40, l, { sz: 15, b: 1, c: '#fff', v: 'middle' })),
     tx(44, 678, 800, 28, 'BIDANG PENATAAN DAN PEMBERDAYAAN - KANTOR WILAYAH PROVINSI JAWA TIMUR', { sz: 12, b: 1, c: '#fff', v: 'middle' }), tx(880, 678, 300, 28, `INTEGRASI NPGT REGIONAL ${tahun}`, { sz: 12, b: 1, c: '#fff', v: 'middle', al: 'center' }), tx(1200, 678, 56, 28, '', { sz: 13, b: 1, c: '#fff', v: 'middle', al: 'center', auto: 'pg' })] });
@@ -303,6 +305,6 @@ function buildSlides(R, pages, nama, ctx = {}) {
     s.els.push(tx(60, 92, 1160, 570, L.map((l, i) => `${i + 1}.  ${l}`).join('\n'), { sz: 17 })); S.push(s) }
 
   // ===== 20. Terima kasih =====
-  S.push({ bg: 'cover', els: [tx(100, 215, 760, 90, 'TERIMA KASIH', { sz: 60, b: 1, c: YEL }), tx(144, 349, 475, 58, NAMA, { sz: 26, b: 1, c: '#fff', v: 'middle', al: 'center' })] });
+  S.push({ bg: 'cover', els: [tx(100, 215, 760, 90, 'TERIMA KASIH', { sz: 60, b: 1, c: YEL }), tx(144, 349, 475, 58, NAMA, { sz: 26, b: 1, c: '#fff', v: 'middle', al: 'center' }), {...PH_COVER}] });
   return { slides: S, info: { nama, tahun, skipped: skip } };
 }

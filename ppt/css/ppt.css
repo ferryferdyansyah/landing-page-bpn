@@ -211,3 +211,35 @@ html.guard body{visibility:hidden}
 
 .sl tr.grp td{font-weight:700}
 .sl table tr.grp td{background:#fdf1d6!important}
+
+.sl .el.ph img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none
+}
+
+.sl .el.ph.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer
+}
+
+.sl .el.ph .phint {
+    display: none;
+    color: #fff;
+    font: 700 15px Montserrat, Arial;
+    text-align: center;
+    padding: 0 40px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .5)
+}
+
+.stage .el.ph.empty:hover {
+    background: rgba(6, 65, 107, .55);
+    outline: none
+}
+
+.stage .el.ph.empty:hover .phint {
+    display: block
+}
